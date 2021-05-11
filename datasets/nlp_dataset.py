@@ -1,8 +1,10 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
-from utils.clean_text import pre_process_text
 
-class NLP_DATASET(Dataset):
+#######################################
+## CLASSIFICATION & REGRESSION TASKS ##
+#######################################
+class TEXT_DATASET(Dataset):
     def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
         self.model_name = model_name
         self.text = text
@@ -20,10 +22,61 @@ class NLP_DATASET(Dataset):
         # LIST WHERE ONE ROW OF TEXT DATA
         text = str(self.text[index])
 
-        if feature_eng is not None:
-            text = feature_eng(text)
+        if self.feature_eng is not None:
+            text = self.feature_eng(text)
 
-        if tokenizer is not None:
+        # TOKENIZER (CountVectorizer - TFIDF - EMBEDDINGS)
+
+        # RETURN TEXT INPUT + LABELS
+
+
+class RNN_DATASET(Dataset):
+    def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
+        self.model_name = model_name
+        self.text = text
+        self.labels = labels
+        self.max_len = max_len
+        self.tokenizer = tokenizer
+        self.feature_eng = feature_eng
+
+    #RETURN THE LENGHT OF THE DATASET
+    def __len__(self):
+        return len(self.text)
+    
+    #FUNCTION THAT RETURN ONE DATAPOINT (INPUT + LABEL)
+    def __getitem__(self, index):
+        # LIST WHERE ONE ROW OF TEXT DATA
+        text = str(self.text[index])
+
+        if self.feature_eng is not None:
+            text = self.feature_eng(text)
+
+        # EMBEDDINGS (WORD2VEC - GLOVE - ELMO)
+
+        # RETURN EMBEDDINGS + TEXT + LABELS
+
+class TRANSFORMER_DATASET(Dataset):
+    def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
+        self.model_name = model_name
+        self.text = text
+        self.labels = labels
+        self.max_len = max_len
+        self.tokenizer = tokenizer
+        self.feature_eng = feature_eng
+
+    #RETURN THE LENGHT OF THE DATASET
+    def __len__(self):
+        return len(self.text)
+    
+    #FUNCTION THAT RETURN ONE DATAPOINT (INPUT + LABEL)
+    def __getitem__(self, index):
+        # LIST WHERE ONE ROW OF TEXT DATA
+        text = str(self.text[index])
+
+        if self.feature_eng is not None:
+            text = self.feature_eng(text)
+
+        if self.tokenizer is not None:
             inputs = self.tokenizer.encode_plus(
                 text,
                 None,
@@ -36,12 +89,26 @@ class NLP_DATASET(Dataset):
 
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
-        return {
-            'ids': torch.tensor(ids, dtype=torch.long),
-            'masks': torch.tensor(mask, dtype=torch.long),
-            'labels': torch.tensor(self.labels[index], dtype=torch.long)
-        }
-        
+        token_type_ids = inputs["token_type_ids"]
+
+        if self.model_name in ["DISTILBERT", "ROBERTA"]:
+            return {
+                'ids': torch.tensor(ids, dtype=torch.long),
+                'masks': torch.tensor(mask, dtype=torch.long),
+                'labels': torch.tensor(self.labels[index], dtype=torch.long)
+            }
+        elif self.model_name in ["BERT"]:
+            return {
+                'ids': torch.tensor(ids, dtype=torch.long),
+                'masks': torch.tensor(mask, dtype=torch.long),
+                'token_type_ids' : torch.tensor(token_type_ids, dtype=torch.long),
+                'labels': torch.tensor(self.labels[index], dtype=torch.long)
+            }
+
+
+###############
+## Q&A TASKS ##
+###############
 class NLP_QA_DATASET(Dataset):
     def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
         self.model_name = model_name
@@ -61,11 +128,11 @@ class NLP_QA_DATASET(Dataset):
         # LIST WHERE ONE ROW OF TEXT DATA
         text = str(self.text[index])
 
-        if feature_eng is not None:
-            text = feature_eng(text)
+        if self.feature_eng is not None:
+            text = self.feature_eng(text)
 
         
-        if tokenizer is not None:
+        if self.tokenizer is not None:
             inputs = self.tokenizer.encode_plus(
                 text,
                 None,

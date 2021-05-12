@@ -117,7 +117,7 @@ dmypy.json
 model_init/
 model_output/
 data/
-models/distilbert/config/
-models/distilbert/config/pytorch_model.bin
-models/distilbert/config/config.json
-models/distilbert/config/vocab.txt
+models/transformers/distilbert/config/
+models/transformers/bert/config/
+models/transformers/roberta/config/
+

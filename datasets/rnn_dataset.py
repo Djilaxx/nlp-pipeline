@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-class RNN_DATASET(Dataset):
+class NLP_DATASET(Dataset):
     def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
         self.model_name = model_name
         self.text = text

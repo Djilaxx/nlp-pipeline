@@ -16,7 +16,6 @@ from transformers import BertTokenizer
 from sklearn import metrics
 from sklearn import model_selection
 # MY OWN MODULES
-from datasets import nlp_dataset
 from utils import early_stopping, folding
 from utils.metrics import metrics_dict
 from trainer.trainer import Trainer
@@ -24,11 +23,17 @@ from trainer.trainer import Trainer
 ##################
 # TRAIN FUNCTION #
 ##################
-def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type="CL"):
-    complete_name = f"{model_name}_{model_type}"
+def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL"):
+    # CHECKING MODEL TYPE
+    if model_name in ["BERT", "DISTILBERT", "ROBERTA"]:
+        model_type = "TRANSFORMER"
+    elif model_name in ["LSTM", "GRU"]:
+        model_type = "RNN"
+
+    complete_name = f"{model_name}_{task}"
     print(f"Training on task : {project} for {folds} folds with {complete_name} model")
 
-    # Loading project config
+    # CONFIG
     config = getattr(importlib.import_module(f"project.{project}.config"), "config")
     
     # CREATING FOLDS
@@ -42,10 +47,18 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type
     df = pd.read_csv(config.main.FOLD_FILE)
 
     # MODEL 
-    # NEED TO BE ADAPTED TO BE ABLE TO RUN CLASSIC MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
-    for name, func in inspect.getmembers(importlib.import_module(f"models.{complete_name}"), inspect.isfunction):
-        if name == complete_name:
-            model = func(**config.model[complete_name])
+    # NEED TO BE ADAPTED TO BE ABLE TO RUN RNN MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
+    # TOKENIZER
+    if model_type == "TRANSFORMER":
+        tokenizer = getattr(importlib.import_module(f"models.{model_type}.{model_name}.tokenizer"), "tokenizer")
+        tokenizer = tokenizer()
+
+    # LOADING MODEL
+    for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_type}.{model_name}.model"), inspect.isclass):
+        if name == model_name:
+            # SOLVE REGRESSION VS CLASSIFICATION LOADING PROBLEM IN MODELS
+            if model_type == "TRANSFORMER":
+                model = cls(task = task, n_class = config.main.N_CLASS, model_config_path = f"models/{model_name}/config")
 
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]
@@ -68,7 +81,9 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type
         valid_text = df_valid[config.main.TEXT_VAR].values.tolist()
         valid_labels = df_valid[config.main.TARGET_VAR].values
         # TRAINING DATASET
-        train_ds = nlp_dataset.NLP_DATASET(
+        #if model_name in ["DISTILBERT", "BERT", "ROBERTA"]:
+        dataset_fct = getattr(importlib.import_module(f"datasets.{model_type}_dataset"), "NLP_DATASET")
+        train_ds = dataset_fct(
             model_name = complete_name,
             text = trn_text,
             labels = trn_labels,
@@ -77,13 +92,13 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type
         )
         # TRAINING DATALOADER
         train_loader = torch.utils.data.DataLoader(
-            trn_ds, 
+            train_ds, 
             batch_size=config.train.TRAIN_BS, 
             shuffle=True, 
             num_workers=0
         )
         # VALIDATION DATASET
-        valid_ds = text_ds.TEXT_DS(
+        valid_ds = dataset_fct(
             model_name = complete_name,
             text = valid_text,
             labels = valid_labels,
@@ -99,7 +114,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type
         )
 
         # IMPORT LOSS FUNCTION
-        loss_module = importlib.import_module(f"loss.{loss}")
+        loss_module = importlib.import_module(f"loss.{config.train.loss}")
         criterion = loss_module.loss_function()
         # SET OPTIMIZER, SCHEDULER
         optimizer = torch.optim.Adam(model.parameters(), lr=config.train.LR)
@@ -107,7 +122,29 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", model_type
         # SET EARLY STOPPING FUNCTION
         es = early_stopping.EarlyStopping(patience=2, mode="max")
         # CREATE TRAINER
-        trainer = Trainer(model, optimizer, config.main.DEVICE, criterion)
+        trainer_fct = getattr(importlib.import_module(f"trainer.{model_type}_trainer"), "TRAINER")
+        trainer = trainer_fct(model, optimizer, config.main.DEVICE, criterion, task)
+
+        # START TRAINING FOR N EPOCHS
+        for epoch in range(config.train.EPOCHS):
+            print(f"Starting epoch number : {epoch}")
+            # TRAINING PHASE
+            print("Training the model...")
+            trainer.training_step(train_loader)
+            # VALIDATION PHASE
+            print("Evaluating the model...")
+            val_loss, metric_value = trainer.eval_step(valid_loader, metric_selected, config.main.N_CLASS)
+            scheduler.step(val_loss)
+            # METRICS
+            print(f"Validation {metric_selected} = {metric_value}")
+            #SAVING CHECKPOINTS
+            Path(os.path.join(config.main.PROJECT_PATH, "model_output/")).mkdir(parents=True, exist_ok=True)
+            es(metric_value, model, model_path=os.path.join(config.main.PROJECT_PATH, "model_output/", f"model_{fold}.bin"))
+            if es.early_stop:
+                print("Early Stopping")
+                break
+            gc.collect()
+
 ##########
 # PARSER #
 ##########
@@ -115,7 +152,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--folds", type=int, default=5)
 parser.add_argument("--project", type=str, default="tweet_disaster")
 parser.add_argument("--model_name", type=str, default="distilbert")
-parser.add_argument("--model_type", type=str, default="CL")
+parser.add_argument("--task", type=str, default="CL")
 
 args = parser.parse_args()
 ##################
@@ -127,5 +164,5 @@ if __name__ == "__main__":
         folds=args.folds,
         task=args.project,
         model_name=args.model_name,
-        model_type=args.model_type,
+        task=args.model_type,
     )

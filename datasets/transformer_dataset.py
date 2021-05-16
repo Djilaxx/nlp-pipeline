@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-class TRANSFORMER_DATASET(Dataset):
+class NLP_DATASET(Dataset):
     def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
         self.model_name = model_name
         self.text = text
@@ -41,12 +41,12 @@ class TRANSFORMER_DATASET(Dataset):
             return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
-                'labels': torch.tensor(self.labels[index], dtype=torch.long)
+                'labels': torch.tensor(self.labels[index], dtype=torch.float32)
             }
         elif self.model_name in ["BERT"]:
             return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
                 'token_type_ids' : torch.tensor(token_type_ids, dtype=torch.long),
-                'labels': torch.tensor(self.labels[index], dtype=torch.long)
+                'labels': torch.tensor(self.labels[index], dtype=torch.float32)
             }

@@ -110,7 +110,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         )
 
         # IMPORT LOSS FUNCTION
-        loss_function = getattr(importlib.import_module(f"loss.{config.train.loss}"), "loss_function")
+        loss_function = getattr(importlib.import_module(f"loss.{config.train.LOSS}"), "loss_function")
         criterion = loss_function()
         # SET OPTIMIZER, SCHEDULER
         optimizer = torch.optim.Adam(model.parameters(), lr=config.train.LR)

@@ -29,7 +29,7 @@ config.train.TRAIN_BS = 64
 config.train.VALID_BS = 32
 config.train.ES = 50
 config.train.LR = 1e-4
-config.train.loss = "CROSS_ENTROPY"
+config.train.LOSS = "CROSS_ENTROPY"
 config.train.METRIC = "ACCURACY"
 
 ####################

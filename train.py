@@ -6,19 +6,12 @@ import os, inspect, importlib, argparse
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import gc
 import pandas as pd
-import numpy as np
 from pathlib import Path
 # ML IMPORT
 import torch
-import torch.nn as nn
-import torchvision.transforms as transforms
-from transformers import BertTokenizer
-from sklearn import metrics
-from sklearn import model_selection
 # MY OWN MODULES
 from utils import early_stopping, folding
 from utils.metrics import metrics_dict
-from trainer.trainer import Trainer
 
 ##################
 # TRAIN FUNCTION #
@@ -34,7 +27,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
     print(f"Training on task : {project} for {folds} folds with {complete_name} model")
 
     # CONFIG
-    config = getattr(importlib.import_module(f"project.{project}.config"), "config")
+    config = getattr(importlib.import_module(f"projects.{project}.config"), "config")
     
     # CREATING FOLDS
     folding.create_folds(datapath=config.main.TRAIN_FILE,
@@ -46,6 +39,8 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
     # LOADING DATA FILE & TOKENIZER
     df = pd.read_csv(config.main.FOLD_FILE)
 
+    # FEATURE ENGINEERING FUNCTION
+    feature_eng = getattr(importlib.import_module(f"projects.{project}.feature_eng"), "feature_engineering")
     # MODEL 
     # NEED TO BE ADAPTED TO BE ABLE TO RUN RNN MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
     # TOKENIZER
@@ -58,14 +53,13 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         if name == model_name:
             # SOLVE REGRESSION VS CLASSIFICATION LOADING PROBLEM IN MODELS
             if model_type == "TRANSFORMER":
-                model = cls(task = task, n_class = config.main.N_CLASS, model_config_path = f"models/{model_name}/config")
+                model = cls(task = task, n_class = config.main.N_CLASS, model_config_path = f"models/{model_type}/{model_name}/config")
 
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]
     # FOLD LOOP
     for fold in range(folds):
         print(f"Starting training for fold : {fold}")
-
         # CREATING TRAINING AND VALIDATION SETS
         df_train = df[df.kfold != fold].reset_index(drop=True)
         df_valid = df[df.kfold == fold].reset_index(drop=True)
@@ -75,20 +69,21 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # CREATING DATALOADERS #
         ########################
         # TRAINING IDs & LABELS
-        trn_text = df_train[config.main.TEXT_VAR].values.tolist()
-        trn_labels = df_train[config.main.TARGET_VAR].values
+        train_text = df_train[config.main.TEXT_VAR].values.tolist()
+        train_labels = df_train[config.main.TARGET_VAR].values
         # VALIDATION IDs & LABELS
         valid_text = df_valid[config.main.TEXT_VAR].values.tolist()
         valid_labels = df_valid[config.main.TARGET_VAR].values
         # TRAINING DATASET
         #if model_name in ["DISTILBERT", "BERT", "ROBERTA"]:
-        dataset_fct = getattr(importlib.import_module(f"datasets.{model_type}_dataset"), "NLP_DATASET")
+        dataset_fct = getattr(importlib.import_module(f"datasets.{model_type}_DATASET"), "NLP_DATASET")
         train_ds = dataset_fct(
-            model_name = complete_name,
-            text = trn_text,
-            labels = trn_labels,
+            model_name = model_name,
+            text=train_text,
+            labels=train_labels,
             max_len = config.main.MAX_LEN,
-            tokenizer = config.train.tokenizer,
+            tokenizer = tokenizer,
+            feature_eng=feature_eng
         )
         # TRAINING DATALOADER
         train_loader = torch.utils.data.DataLoader(
@@ -99,30 +94,31 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         )
         # VALIDATION DATASET
         valid_ds = dataset_fct(
-            model_name = complete_name,
+            model_name = model_name,
             text = valid_text,
             labels = valid_labels,
             max_len = config.main.MAX_LEN,
-            tokenizer = config.train.tokenizer
+            tokenizer=tokenizer,
+            feature_eng=feature_eng
         )
         # VALIDATION DATALOADER
         valid_loader = torch.utils.data.DataLoader(
             valid_ds, 
-            batch_size=config.hyper.VALID_BS, 
+            batch_size=config.train.VALID_BS, 
             shuffle=True, 
             num_workers=0
         )
 
         # IMPORT LOSS FUNCTION
-        loss_module = importlib.import_module(f"loss.{config.train.loss}")
-        criterion = loss_module.loss_function()
+        loss_function = getattr(importlib.import_module(f"loss.{config.train.loss}"), "loss_function")
+        criterion = loss_function()
         # SET OPTIMIZER, SCHEDULER
         optimizer = torch.optim.Adam(model.parameters(), lr=config.train.LR)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
         # SET EARLY STOPPING FUNCTION
         es = early_stopping.EarlyStopping(patience=2, mode="max")
         # CREATE TRAINER
-        trainer_fct = getattr(importlib.import_module(f"trainer.{model_type}_trainer"), "TRAINER")
+        trainer_fct = getattr(importlib.import_module(f"trainer.{model_type}_TRAINER"), "TRAINER")
         trainer = trainer_fct(model, optimizer, config.main.DEVICE, criterion, task)
 
         # START TRAINING FOR N EPOCHS
@@ -162,7 +158,7 @@ if __name__ == "__main__":
     print("Training start...")
     train(
         folds=args.folds,
-        task=args.project,
+        project=args.project,
         model_name=args.model_name,
-        task=args.model_type,
+        task=args.task
     )

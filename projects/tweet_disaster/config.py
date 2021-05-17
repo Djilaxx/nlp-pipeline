@@ -1,4 +1,5 @@
 from easydict import EasyDict as edict
+import torch
 
 config = edict()
 ########
@@ -14,12 +15,21 @@ config.main.SUBMISSION = "data/tweet_disaster/sample_submission.csv"
 config.main.FOLD_FILE = "data/tweet_disaster/train_folds.csv"
 config.main.FOLD_NUMBER = 5
 config.main.FOLD_METHOD = "SKF"
-config.main.TARGET_VAR = "Survived"
+config.main.TARGET_VAR = "target"
+config.main.TEXT_VAR = "text"
+config.main.DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+config.main.N_CLASS = 2
+config.main.MAX_LEN = 160
 #######################
 # TRAINING PARAMETERS #
 #######################
 config.train = edict()
+config.train.EPOCHS = 1
+config.train.TRAIN_BS = 64
+config.train.VALID_BS = 32
 config.train.ES = 50
+config.train.LR = 1e-4
+config.train.loss = "CROSS_ENTROPY"
 config.train.METRIC = "ACCURACY"
 
 ####################

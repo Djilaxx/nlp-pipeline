@@ -36,17 +36,18 @@ class NLP_DATASET(Dataset):
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
         token_type_ids = inputs["token_type_ids"]
+        labels = torch.tensor(self.labels[index], dtype=torch.long)
 
         if self.model_name in ["DISTILBERT", "ROBERTA"]:
             return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
-                'labels': torch.tensor(self.labels[index], dtype=torch.float32)
+                'labels': labels
             }
         elif self.model_name in ["BERT"]:
             return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
                 'token_type_ids' : torch.tensor(token_type_ids, dtype=torch.long),
-                'labels': torch.tensor(self.labels[index], dtype=torch.float32)
+                'labels': labels
             }

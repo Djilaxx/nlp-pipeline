@@ -40,7 +40,11 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
     df = pd.read_csv(config.main.FOLD_FILE)
 
     # FEATURE ENGINEERING FUNCTION
-    feature_eng = getattr(importlib.import_module(f"projects.{project}.feature_eng"), "feature_engineering")
+    try:
+        feature_eng = getattr(importlib.import_module(f"projects.{project}.feature_eng"), "feature_engineering")
+    except:
+        print("No feature_engineering function")
+        feature_eng = None
     # MODEL 
     # NEED TO BE ADAPTED TO BE ABLE TO RUN RNN MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
     # TOKENIZER
@@ -53,7 +57,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         if name == model_name:
             # SOLVE REGRESSION VS CLASSIFICATION LOADING PROBLEM IN MODELS
             if model_type == "TRANSFORMER":
-                model = cls(task = task, n_class = config.main.N_CLASS, model_config_path = f"models/{model_type}/{model_name}/config")
+                model = cls(task=task, model_config_path=f"models/{model_type}/{model_name}/config", n_class=config.main.N_CLASS)
 
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]

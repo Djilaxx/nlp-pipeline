@@ -5,7 +5,6 @@ import numpy as np
 import torch
 from tqdm import tqdm
 from utils.average_meter import AverageMeter
-from utils.metrics import metrics_dict
 import warnings
 warnings.filterwarnings("ignore")
 #################
@@ -47,6 +46,7 @@ class TRAINER:
                 ids = data["ids"].to(self.device)
                 masks = data["masks"].to(self.device)
                 token_type_ids = data["token_type_ids"].to(self.device)
+                labels = data["labels"].to(self.device)
                 # GETTING PREDICTION FROM MODEL
                 self.model.zero_grad()
                 output = self.model(ids=ids, mask=masks, token_type_ids=token_type_ids)    
@@ -62,7 +62,7 @@ class TRAINER:
     ###################
     # VALIDATION STEP #
     ###################
-    def eval_step(self, data_loader, metric, n_class):
+    def eval_step(self, data_loader, metric, task):
         # LOSS & METRIC AVERAGE
         losses = AverageMeter()
         metrics_avg = AverageMeter()
@@ -85,17 +85,19 @@ class TRAINER:
                     ids = data["ids"].to(self.device)
                     masks = data["masks"].to(self.device)
                     token_type_ids = data["token_type_ids"].to(self.device)
+                    labels = data["labels"].to(self.device)
                     # GETTING PREDICTION FROM MODEL
                     output = self.model(ids=ids, mask=masks, token_type_ids=token_type_ids)    
 
                 # CALCULATE LOSS & METRICS
                 loss = self.criterion(output, labels)
-
-                metric_used = metrics_dict[metric]
-                predictions = torch.softmax(output, dim=1)
-                _, predictions = torch.max(predictions, dim=1)
-
-                metric_value = metric_used(labels, predictions, n_class)
+                
+                # CHECK FOR REGRESSION VS CLASSIFICATION
+                if task == "CL":
+                    output = output.argmax(axis=1)
+                output = output.cpu().detach().numpy()
+                labels = labels.cpu().detach().numpy()
+                metric_value = metric(labels, output)
 
                 losses.update(loss.item(), ids.size(0))
                 metrics_avg.update(metric_value.item(), ids.size(0))

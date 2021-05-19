@@ -1,11 +1,10 @@
+from sklearn import metrics
 import warnings
 warnings.filterwarnings("ignore")
 
-from pytorch_lightning.metrics import functional
-
 metrics_dict = {
-    "ACCURACY" : functional.accuracy,
-    "AUROC" : functional.auroc,
-    "CONFUSION_MATRIX" : functional.confusion_matrix,
-    "F1_SCORE" : functional.f1_score,
+    "ACCURACY": metrics.accuracy_score,
+    "AUC": metrics.roc_auc_score,
+    "MSE": metrics.mean_squared_error,
+    "MAE": metrics.mean_absolute_error
 }

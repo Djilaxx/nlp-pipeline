@@ -8,7 +8,7 @@ config = edict()
 # main is the config section related to basic info on the project
 # data repo, data format, folding etc... data preparation
 config.main = edict()
-config.main.PROJECT_PATH = "project/quora/"
+config.main.PROJECT_PATH = "projects/quora/"
 config.main.TRAIN_FILE = "data/quora/train.csv"
 config.main.TEST_FILE = "data/quora/test.csv"
 config.main.SUBMISSION = "data/quora/sample_submission.csv"

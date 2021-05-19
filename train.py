@@ -25,10 +25,8 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
 
     complete_name = f"{model_name}_{task}"
     print(f"Training on task : {project} for {folds} folds with {complete_name} model")
-
     # CONFIG
     config = getattr(importlib.import_module(f"projects.{project}.config"), "config")
-    
     # CREATING FOLDS
     folding.create_folds(datapath=config.main.TRAIN_FILE,
                         output_path=config.main.FOLD_FILE,
@@ -36,7 +34,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
                         method=config.main.FOLD_METHOD,
                         target=config.main.TARGET_VAR)
 
-    # LOADING DATA FILE & TOKENIZER
+        # LOADING DATA FILE & TOKENIZER
     df = pd.read_csv(config.main.FOLD_FILE)
 
     # FEATURE ENGINEERING FUNCTION
@@ -52,13 +50,6 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         tokenizer = getattr(importlib.import_module(f"models.{model_type}.{model_name}.tokenizer"), "tokenizer")
         tokenizer = tokenizer()
 
-    # LOADING MODEL
-    for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_type}.{model_name}.model"), inspect.isclass):
-        if name == model_name:
-            # SOLVE REGRESSION VS CLASSIFICATION LOADING PROBLEM IN MODELS
-            if model_type == "TRANSFORMER":
-                model = cls(task=task, model_config_path=f"models/{model_type}/{model_name}/config", n_class=config.main.N_CLASS)
-
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]
     # FOLD LOOP
@@ -67,6 +58,12 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # CREATING TRAINING AND VALIDATION SETS
         df_train = df[df.kfold != fold].reset_index(drop=True)
         df_valid = df[df.kfold == fold].reset_index(drop=True)
+
+        # LOADING MODEL
+        for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_type}.{model_name}.model"), inspect.isclass):
+            if name == model_name:
+                if model_type == "TRANSFORMER":
+                    model = cls(task=task, model_config_path=f"models/{model_type}/{model_name}/config", n_class=config.main.N_CLASS)
 
         model.to(config.main.DEVICE)
         ########################
@@ -83,6 +80,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         dataset_fct = getattr(importlib.import_module(f"datasets.{model_type}_DATASET"), "NLP_DATASET")
         train_ds = dataset_fct(
             model_name = model_name,
+            task = task,
             text=train_text,
             labels=train_labels,
             max_len = config.main.MAX_LEN,
@@ -99,6 +97,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # VALIDATION DATASET
         valid_ds = dataset_fct(
             model_name = model_name,
+            task = task,
             text = valid_text,
             labels = valid_labels,
             max_len = config.main.MAX_LEN,
@@ -133,10 +132,10 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
             trainer.training_step(train_loader)
             # VALIDATION PHASE
             print("Evaluating the model...")
-            val_loss, metric_value = trainer.eval_step(valid_loader, metric_selected, config.main.N_CLASS)
+            val_loss, metric_value = trainer.eval_step(valid_loader, metric_selected, task)
             scheduler.step(val_loss)
             # METRICS
-            print(f"Validation {metric_selected} = {metric_value}")
+            print(f"Validation {config.train.METRIC} = {metric_value}")
             #SAVING CHECKPOINTS
             Path(os.path.join(config.main.PROJECT_PATH, "model_output/")).mkdir(parents=True, exist_ok=True)
             es(metric_value, model, model_path=os.path.join(config.main.PROJECT_PATH, "model_output/", f"model_{fold}.bin"))

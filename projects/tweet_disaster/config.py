@@ -8,7 +8,7 @@ config = edict()
 # main is the config section related to basic info on the project
 # data repo, data format, folding etc... data preparation
 config.main = edict()
-config.main.PROJECT_PATH = "project/tweet_disaster/"
+config.main.PROJECT_PATH = "projects/tweet_disaster/"
 config.main.TRAIN_FILE = "data/tweet_disaster/train.csv"
 config.main.TEST_FILE = "data/tweet_disaster/test.csv"
 config.main.SUBMISSION = "data/tweet_disaster/sample_submission.csv"

@@ -2,8 +2,9 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 class NLP_DATASET(Dataset):
-    def __init__(self, model_name, text, labels, max_len, tokenizer = None, feature_eng = None):
+    def __init__(self, model_name, task, text, labels, max_len, tokenizer = None, feature_eng = None):
         self.model_name = model_name
+        self.task = task
         self.text = text
         self.labels = labels
         self.max_len = max_len
@@ -36,7 +37,10 @@ class NLP_DATASET(Dataset):
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
         token_type_ids = inputs["token_type_ids"]
-        labels = torch.tensor(self.labels[index], dtype=torch.long)
+        if self.task == "CL":
+            labels = torch.tensor(self.labels[index], dtype=torch.long)
+        elif self.task == "REG":
+            labels = torch.tensor(self.labels[index], dtype=torch.float32)
 
         if self.model_name in ["DISTILBERT", "ROBERTA"]:
             return {

@@ -8,7 +8,7 @@ config = edict()
 # main is the config section related to basic info on the project
 # data repo, data format, folding etc... data preparation
 config.main = edict()
-config.main.PROJECT_PATH = "project/allocine/"
+config.main.PROJECT_PATH = "projects/allocine/"
 config.main.TRAIN_FILE = "data/allocine/train.csv"
 config.main.TEST_FILE = "data/allocine/test.csv"
 config.main.SUBMISSION = "data/allocine/sample_submission.csv"

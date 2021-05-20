@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import transformers
 
-
 class ROBERTA(torch.nn.Module):
     def __init__(self, task, model_config_path, n_class = 2):
         super(ROBERTA, self).__init__()

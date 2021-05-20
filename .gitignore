@@ -117,7 +117,7 @@ dmypy.json
 model_init/
 model_output/
 data/
-models/TRANSFORMER/DISTILBERT/config/
-models/TRANSFORMER/BERT/config/
-models/TRANSFORMER/ROBERTA/config/
+models/DISTILBERT/config/
+models/BERT/config/
+models/ROBERTA/config/
 

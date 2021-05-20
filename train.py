@@ -10,6 +10,8 @@ from pathlib import Path
 # ML IMPORT
 import torch
 # MY OWN MODULES
+from datasets.NLP_DATASET import NLP_DATASET
+from trainer.TRAINER import TRAINER
 from utils import early_stopping, folding
 from utils.metrics import metrics_dict
 
@@ -17,12 +19,6 @@ from utils.metrics import metrics_dict
 # TRAIN FUNCTION #
 ##################
 def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL"):
-    # CHECKING MODEL TYPE
-    if model_name in ["BERT", "DISTILBERT", "ROBERTA"]:
-        model_type = "TRANSFORMER"
-    elif model_name in ["LSTM", "GRU"]:
-        model_type = "RNN"
-
     complete_name = f"{model_name}_{task}"
     print(f"Training on task : {project} for {folds} folds with {complete_name} model")
     # CONFIG
@@ -46,10 +42,8 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
     # MODEL 
     # NEED TO BE ADAPTED TO BE ABLE TO RUN RNN MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
     # TOKENIZER
-    if model_type == "TRANSFORMER":
-        tokenizer = getattr(importlib.import_module(f"models.{model_type}.{model_name}.tokenizer"), "tokenizer")
-        tokenizer = tokenizer()
-
+    tokenizer = getattr(importlib.import_module(f"models.{model_name}.tokenizer"), "tokenizer")
+    tokenizer = tokenizer()
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]
     # FOLD LOOP
@@ -60,10 +54,9 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         df_valid = df[df.kfold == fold].reset_index(drop=True)
 
         # LOADING MODEL
-        for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_type}.{model_name}.model"), inspect.isclass):
+        for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_name}.model"), inspect.isclass):
             if name == model_name:
-                if model_type == "TRANSFORMER":
-                    model = cls(task=task, model_config_path=f"models/{model_type}/{model_name}/config", n_class=config.main.N_CLASS)
+                model = cls(task=task, model_config_path=f"models/{model_name}/config", n_class=config.main.N_CLASS)
 
         model.to(config.main.DEVICE)
         ########################
@@ -76,9 +69,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         valid_text = df_valid[config.main.TEXT_VAR].values.tolist()
         valid_labels = df_valid[config.main.TARGET_VAR].values
         # TRAINING DATASET
-        #if model_name in ["DISTILBERT", "BERT", "ROBERTA"]:
-        dataset_fct = getattr(importlib.import_module(f"datasets.{model_type}_DATASET"), "NLP_DATASET")
-        train_ds = dataset_fct(
+        train_ds = NLP_DATASET(
             model_name = model_name,
             task = task,
             text=train_text,
@@ -95,7 +86,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
             num_workers=0
         )
         # VALIDATION DATASET
-        valid_ds = dataset_fct(
+        valid_ds = NLP_DATASET(
             model_name = model_name,
             task = task,
             text = valid_text,
@@ -121,8 +112,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # SET EARLY STOPPING FUNCTION
         es = early_stopping.EarlyStopping(patience=2, mode="max")
         # CREATE TRAINER
-        trainer_fct = getattr(importlib.import_module(f"trainer.{model_type}_TRAINER"), "TRAINER")
-        trainer = trainer_fct(model, optimizer, config.main.DEVICE, criterion, task)
+        trainer = TRAINER(model, optimizer, config.main.DEVICE, criterion, task)
 
         # START TRAINING FOR N EPOCHS
         for epoch in range(config.train.EPOCHS):

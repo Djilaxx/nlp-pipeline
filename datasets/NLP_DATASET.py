@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 class NLP_DATASET(Dataset):
-    def __init__(self, model_name, task, text, labels, max_len, tokenizer = None, feature_eng = None):
+    def __init__(self, model_name, task, text, labels, max_len, tokenizer=None, feature_eng=None):
         self.model_name = model_name
         self.task = task
         self.text = text
@@ -14,15 +14,16 @@ class NLP_DATASET(Dataset):
     #RETURN THE LENGHT OF THE DATASET
     def __len__(self):
         return len(self.text)
-    
+
     #FUNCTION THAT RETURN ONE DATAPOINT (INPUT + LABEL)
     def __getitem__(self, index):
+
         # LIST WHERE ONE ROW OF TEXT DATA
         text = str(self.text[index])
-
+        # USING FEATURE_ENG FUNCTION TO PRE PROCESS TEXT
         if self.feature_eng is not None:
             text = self.feature_eng(text)
-
+        # USING TOKENIZERS ENCODING TO GET TEXT DATA IN CORRECT FORMAT
         if self.tokenizer is not None:
             inputs = self.tokenizer.encode_plus(
                 text,
@@ -32,26 +33,24 @@ class NLP_DATASET(Dataset):
                 pad_to_max_length=True,
                 return_token_type_ids=True,
                 truncation=True
-                )
+            )
 
+        # GETTING ALL DATA NEEDED FOR TRANSFORMERS TRAINING
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
         token_type_ids = inputs["token_type_ids"]
+
+        # LABELS DATA TYPE DEPENDING ON TASK
         if self.task == "CL":
             labels = torch.tensor(self.labels[index], dtype=torch.long)
         elif self.task == "REG":
             labels = torch.tensor(self.labels[index], dtype=torch.float32)
 
-        if self.model_name in ["DISTILBERT", "ROBERTA"]:
-            return {
+        # RETURN ONLY DATA NECESSARY FOR MODEL TRAINED
+        # DISTILBERT & ROBERTA DON'T NEED TOKEN_TYPE_IDS
+        return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
+                'token_type_ids': torch.tensor(token_type_ids, dtype=torch.long),
                 'labels': labels
-            }
-        elif self.model_name in ["BERT"]:
-            return {
-                'ids': torch.tensor(ids, dtype=torch.long),
-                'masks': torch.tensor(mask, dtype=torch.long),
-                'token_type_ids' : torch.tensor(token_type_ids, dtype=torch.long),
-                'labels': labels
-            }
+        }

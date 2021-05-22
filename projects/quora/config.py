@@ -15,6 +15,7 @@ config.main.SUBMISSION = "data/quora/sample_submission.csv"
 config.main.FOLD_FILE = "data/quora/train_folds.csv"
 config.main.FOLD_NUMBER = 5
 config.main.FOLD_METHOD = "SKF"
+config.main.TASK = "CLASSIFICATION"
 config.main.TARGET_VAR = "target"
 config.main.TEXT_VAR = "question_text"
 config.main.DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")

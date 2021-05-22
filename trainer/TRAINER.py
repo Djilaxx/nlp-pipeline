@@ -65,7 +65,7 @@ class TRAINER:
     ###################
     # VALIDATION STEP #
     ###################
-    def eval_step(self, data_loader, metric, task):
+    def eval_step(self, data_loader, metric):
         # LOSS & METRIC AVERAGE
         losses = AverageMeter()
         metrics_avg = AverageMeter()
@@ -93,7 +93,7 @@ class TRAINER:
                 loss = self.criterion(output, labels)
 
                 # CHECK FOR REGRESSION VS CLASSIFICATION
-                if task == "CL":
+                if self.task == "CLASSIFICATION":
                     output = output.argmax(axis=1)
                 output = output.cpu().detach().numpy()
                 labels = labels.cpu().detach().numpy()

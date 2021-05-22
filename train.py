@@ -18,9 +18,8 @@ from utils.metrics import metrics_dict
 ##################
 # TRAIN FUNCTION #
 ##################
-def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL"):
-    complete_name = f"{model_name}_{task}"
-    print(f"Training on task : {project} for {folds} folds with {complete_name} model")
+def train(folds=5, project="tweet_disaster", model_name="distilbert"):
+    print(f"Training on project : {project} for {folds} folds with {model_name} model")
     # CONFIG
     config = getattr(importlib.import_module(f"projects.{project}.config"), "config")
     # CREATING FOLDS
@@ -56,7 +55,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # LOADING MODEL
         for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_name}.model"), inspect.isclass):
             if name == model_name:
-                model = cls(task=task, model_config_path=f"models/{model_name}/config", n_class=config.main.N_CLASS)
+                model = cls(task=config.main.TASK, model_config_path=f"models/{model_name}/config", n_class=config.main.N_CLASS)
 
         model.to(config.main.DEVICE)
         ########################
@@ -71,7 +70,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # TRAINING DATASET
         train_ds = NLP_DATASET(
             model_name = model_name,
-            task = task,
+            task = config.main.TASK,
             text=train_text,
             labels=train_labels,
             max_len = config.main.MAX_LEN,
@@ -88,7 +87,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # VALIDATION DATASET
         valid_ds = NLP_DATASET(
             model_name = model_name,
-            task = task,
+            task = config.main.TASK,
             text = valid_text,
             labels = valid_labels,
             max_len = config.main.MAX_LEN,
@@ -112,7 +111,11 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
         # SET EARLY STOPPING FUNCTION
         es = early_stopping.EarlyStopping(patience=2, mode="max")
         # CREATE TRAINER
-        trainer = TRAINER(model, optimizer, config.main.DEVICE, criterion, task)
+        trainer = TRAINER(model=model,
+                          optimizer=optimizer,
+                          device=config.main.DEVICE,
+                          criterion=criterion,
+                          task=config.main.TASK)
 
         # START TRAINING FOR N EPOCHS
         for epoch in range(config.train.EPOCHS):
@@ -122,7 +125,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert", task="CL")
             trainer.training_step(train_loader)
             # VALIDATION PHASE
             print("Evaluating the model...")
-            val_loss, metric_value = trainer.eval_step(valid_loader, metric_selected, task)
+            val_loss, metric_value = trainer.eval_step(valid_loader, metric_selected)
             scheduler.step(val_loss)
             # METRICS
             print(f"Validation {config.train.METRIC} = {metric_value}")
@@ -141,7 +144,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--folds", type=int, default=5)
 parser.add_argument("--project", type=str, default="tweet_disaster")
 parser.add_argument("--model_name", type=str, default="distilbert")
-parser.add_argument("--task", type=str, default="CL")
 
 args = parser.parse_args()
 ##################
@@ -152,6 +154,5 @@ if __name__ == "__main__":
     train(
         folds=args.folds,
         project=args.project,
-        model_name=args.model_name,
-        task=args.task
-    )
+        model_name=args.model_name    
+        )

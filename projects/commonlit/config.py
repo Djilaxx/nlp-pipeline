@@ -15,6 +15,7 @@ config.main.SUBMISSION = "data/commonlit/sample_submission.csv"
 config.main.FOLD_FILE = "data/commonlit/train_folds.csv"
 config.main.FOLD_NUMBER = 5
 config.main.FOLD_METHOD = "KF"
+config.main.TASK = "REGRESSION"
 config.main.TARGET_VAR = "target"
 config.main.TEXT_VAR = "excerpt"
 config.main.DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")

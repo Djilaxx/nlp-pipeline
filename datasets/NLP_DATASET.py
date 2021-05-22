@@ -17,7 +17,6 @@ class NLP_DATASET(Dataset):
 
     #FUNCTION THAT RETURN ONE DATAPOINT (INPUT + LABEL)
     def __getitem__(self, index):
-
         # LIST WHERE ONE ROW OF TEXT DATA
         text = str(self.text[index])
         # USING FEATURE_ENG FUNCTION TO PRE PROCESS TEXT
@@ -41,12 +40,11 @@ class NLP_DATASET(Dataset):
         token_type_ids = inputs["token_type_ids"]
 
         # LABELS DATA TYPE DEPENDING ON TASK
-        if self.task == "CL":
+        if self.task == "CLASSIFICATION":
             labels = torch.tensor(self.labels[index], dtype=torch.long)
-        elif self.task == "REG":
+        elif self.task == "REGRESSION":
             labels = torch.tensor(self.labels[index], dtype=torch.float32)
 
-        # RETURN ONLY DATA NECESSARY FOR MODEL TRAINED
         # DISTILBERT & ROBERTA DON'T NEED TOKEN_TYPE_IDS
         return {
                 'ids': torch.tensor(ids, dtype=torch.long),

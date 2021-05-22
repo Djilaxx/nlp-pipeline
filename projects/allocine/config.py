@@ -15,10 +15,10 @@ config.main.SUBMISSION = "data/allocine/sample_submission.csv"
 config.main.FOLD_FILE = "data/allocine/train_folds.csv"
 config.main.FOLD_NUMBER = 5
 config.main.FOLD_METHOD = "SKF"
+config.main.TASK = "CLASSIFICATION"
 config.main.TARGET_VAR = "polarity"
 config.main.TEXT_VAR = "review"
-config.main.DEVICE = torch.device(
-    "cuda") if torch.cuda.is_available() else torch.device("cpu")
+config.main.DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 config.main.N_CLASS = 2
 config.main.MAX_LEN = 160
 #######################

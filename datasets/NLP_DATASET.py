@@ -1,8 +1,8 @@
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 class NLP_DATASET(Dataset):
-    def __init__(self, model_name, task, text, labels, max_len, tokenizer=None, feature_eng=None):
+    def __init__(self, model_name, task, text, max_len, labels=None, tokenizer=None, feature_eng=None):
         self.model_name = model_name
         self.task = task
         self.text = text
@@ -39,16 +39,23 @@ class NLP_DATASET(Dataset):
         mask = inputs['attention_mask']
         token_type_ids = inputs["token_type_ids"]
 
-        # LABELS DATA TYPE DEPENDING ON TASK
-        if self.task == "CLASSIFICATION":
-            labels = torch.tensor(self.labels[index], dtype=torch.long)
-        elif self.task == "REGRESSION":
-            labels = torch.tensor(self.labels[index], dtype=torch.float32)
+        if self.labels is not None:
+            # LABELS DATA TYPE DEPENDING ON TASK
+            if self.task == "CLASSIFICATION":
+                labels = torch.tensor(self.labels[index], dtype=torch.long)
+            elif self.task == "REGRESSION":
+                labels = torch.tensor(self.labels[index], dtype=torch.float32)
 
-        # DISTILBERT & ROBERTA DON'T NEED TOKEN_TYPE_IDS
-        return {
+            # DISTILBERT & ROBERTA DON'T NEED TOKEN_TYPE_IDS
+            return {
                 'ids': torch.tensor(ids, dtype=torch.long),
                 'masks': torch.tensor(mask, dtype=torch.long),
                 'token_type_ids': torch.tensor(token_type_ids, dtype=torch.long),
                 'labels': labels
-        }
+            }
+        else:
+            return {
+                'ids': torch.tensor(ids, dtype=torch.long),
+                'masks': torch.tensor(mask, dtype=torch.long),
+                'token_type_ids': torch.tensor(token_type_ids, dtype=torch.long),
+            }

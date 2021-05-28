@@ -21,6 +21,9 @@ config.main.TEXT_VAR = "excerpt"
 config.main.DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 config.main.N_CLASS = 1
 config.main.MAX_LEN = 320
+config.main.PREDICTION_FOLD_NUMBER = 5
+config.main.WEIGHTS_PATH = "projects/commonlit/model_output/model_DISTILBERT_2021-05-28_0.bin"
+config.main.PREDICT_PROBA = False
 #######################
 # TRAINING PARAMETERS #
 #######################

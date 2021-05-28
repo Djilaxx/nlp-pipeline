@@ -7,9 +7,9 @@ class ROBERTA(torch.nn.Module):
         super(ROBERTA, self).__init__()
         self.roberta = transformers.RobertaModel.from_pretrained(model_config_path)
         self.drop = nn.Dropout(0.3)
-        if task == "REG":
+        if task == "REGRESSION":
             self.l0 = nn.Linear(768, 1)
-        elif task == "CL":
+        elif task == "CLASSIFICATION":
             self.l0 = nn.Linear(768, n_class)
         torch.nn.init.normal_(self.l0.weight, std=0.02)
 

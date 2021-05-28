@@ -30,7 +30,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
                         method=config.main.FOLD_METHOD,
                         target=config.main.TARGET_VAR)
 
-        # LOADING DATA FILE & TOKENIZER
+    # LOADING DATA FILE & TOKENIZER
     df = pd.read_csv(config.main.FOLD_FILE)
 
     # FEATURE ENGINEERING FUNCTION
@@ -39,8 +39,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
     except:
         print("No feature_engineering function")
         feature_eng = None
-    # MODEL 
-    # NEED TO BE ADAPTED TO BE ABLE TO RUN RNN MODELS AND TRANSFORMERS WITH LOADED CONFIG #####
+
     # TOKENIZER
     tokenizer = getattr(importlib.import_module(f"models.{model_name}.tokenizer"), "tokenizer")
     tokenizer = tokenizer()
@@ -135,7 +134,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
             es(
                 metric_value, 
                 model, 
-                model_path=os.path.join(config.main.PROJECT_PATH, "model_output/",f"model_{model_name}_{fold}_{round(metric_value, 3)}_{str(datetime.date.today().isoformat())}.bin")
+                model_path=os.path.join(config.main.PROJECT_PATH, "model_output/", f"model_{model_name}_{str(datetime.date.today().isoformat())}_{fold}.bin")
             )
             if es.early_stop:
                 print("Early Stopping")
@@ -148,7 +147,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
 parser = argparse.ArgumentParser()
 parser.add_argument("--folds", type=int, default=5)
 parser.add_argument("--project", type=str, default="tweet_disaster")
-parser.add_argument("--model_name", type=str, default="distilbert")
+parser.add_argument("--model_name", type=str, default="DISTILBERT")
 
 args = parser.parse_args()
 ##################

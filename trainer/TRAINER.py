@@ -17,12 +17,12 @@ class TRAINER:
     training_step train the model for one epoch
     eval_step evaluate the current model on validation data and output current loss and other evaluation metric
     '''
-    def __init__(self, model, optimizer, device, criterion, task):
+    def __init__(self, model, task, device, optimizer=None, criterion=None):
         self.model = model
-        self.optimizer = optimizer
-        self.device = device
-        self.criterion = criterion
         self.task = task
+        self.device = device
+        self.optimizer = optimizer
+        self.criterion = criterion
 
     #################
     # TRAINING STEP #
@@ -105,3 +105,35 @@ class TRAINER:
                 tk0.set_postfix(loss=losses.avg)
         print(f"Validation Loss = {losses.avg}")
         return loss, metrics_avg.avg
+
+    #############
+    # TEST STEP #
+    #############
+    def test_step(self, data_loader, n_class):
+        # DATA LOADER LOOP
+        model_preds = []
+        with torch.no_grad():
+            tk0 = tqdm(data_loader, total=len(data_loader))
+            for _, data in enumerate(tk0):
+                model_name = self.model.__class__.__name__
+                # LOADING TEXT TOKENS & LABELS
+                ids = data["ids"].to(self.device)
+                masks = data["masks"].to(self.device)
+                if model_name in ["BERT"]:
+                    token_type_ids = data["token_type_ids"].to(self.device)
+                    # GETTING PREDICTION FROM MODEL
+                    preds = self.model(ids=ids, mask=masks, token_type_ids=token_type_ids)
+                elif model_name in ["DISTILBERT", "ROBERTA"]:
+                    # GETTING PREDICTION FROM MODEL
+                    preds = self.model(ids=ids, mask=masks)
+                
+                # OUTPUT PROCESSING
+                if self.task == "CLASSIFICATION":
+                    if n_class == 2:
+                        preds = torch.sigmoid(preds)
+                    elif n_class > 2:
+                        preds = torch.softmax(preds, dim=0)
+                preds = preds.cpu().detach().numpy()
+                model_preds.extend(preds)
+            tk0.set_postfix(stage="test")
+        return model_preds

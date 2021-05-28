@@ -20,15 +20,16 @@ To add a new project you'll to create a few things :
 * copy and paste the content of another config.py file and change the information to be adequate with your task
 * Add the functions you require to the feature_eng.py file
 
-To start training a model on any task use this command in terminal :
+### **Training**
+To start training a model on any project use this command in terminal :
 ```
-python -m run --project=tweet_disaster
+python -m train --project=tweet_disaster
 ```
 You can replace the **tweet_disaster** with any folder in projects/.
 Default parameters train for **5** folds using a **DISTILBERT** model.
 You can change these parameters as such :
 ```
-python -m run --folds=8 --project=commonlit" --model_name=BERT
+python -m train --folds=8 --project=commonlit" --model_name=BERT
 ```
 
 The parameters can take different values :
@@ -36,9 +37,16 @@ The parameters can take different values :
 * **folds** : this parameter determine the number of folds to create into the dataset. If you choose 5 for example, the dataset will be divided in 5, train a model on 4 folds and validate on the last (folds 0, 1, 2, and 3 for training and 4 for validation. Then, it'll train on folds 0, 1, 2, 4 and validate on 3 etc...).
 * **model_name** : You can choose any model that is in the models/ folder, name must be typed in MAJ like in the example above.
 
+### **Inference**
+To start prediction on new data for a project you can use this :
+```
+python -m predict --project=tweet_disaster --model_name=DISTILBERT
+```
+
+You need to check the parameters config.main.PREDICTION_FOLD_NUMBER & config.main.WEIGHTS_PATH, the 1st one must correspond to the number of fold you chose when training a model, the 2nd one must correspond to the path to the saved model weights (usually under projects/YOUR_PROJECT/model_output)
+
 ## **To do** 
 ---
-* Configure the inference file
 * Add code the allow for Q&A projects
 * Add scheduler
 * Add more models

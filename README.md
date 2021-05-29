@@ -29,7 +29,7 @@ You can replace the **tweet_disaster** with any folder in projects/.
 Default parameters train for **5** folds using a **DISTILBERT** model.
 You can change these parameters as such :
 ```
-python -m train --folds=8 --project=commonlit" --model_name=BERT
+python -m train --folds=8 --project=commonlit --model_name=BERT
 ```
 
 The parameters can take different values :

@@ -16,6 +16,7 @@ class TRAINER:
     '''
     training_step train the model for one epoch
     eval_step evaluate the current model on validation data and output current loss and other evaluation metric
+    test_step is used to predict on test data
     '''
     def __init__(self, model, task, device, optimizer=None, criterion=None):
         self.model = model

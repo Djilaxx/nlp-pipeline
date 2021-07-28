@@ -14,8 +14,8 @@ import torch
 # MY OWN MODULES
 from datasets.NLP_DATASET import NLP_DATASET
 from trainer.TRAINER import TRAINER
-from utils import early_stopping, folding
-from utils.metrics import metrics_dict
+from utils import EARLY_STOPPING, FOLDING
+from utils.METRICS import metrics_dict
 
 ##################
 # TRAIN FUNCTION #
@@ -29,10 +29,10 @@ def train(run_number, folds=5, project="tweet_disaster", model_name="distilbert"
     # INIT WANDB
     wandb.init(config=config, project=project, name=model_name + "_" + str(run_number))
     # CREATING FOLDS
-    folding.create_folds(datapath=config.main.TRAIN_FILE,
+    FOLDING.create_splits(input_path=config.main.TRAIN_FILE,
                         output_path=config.main.FOLD_FILE,
-                        nb_folds = folds,
-                        method=config.main.FOLD_METHOD,
+                        n_folds = folds,
+                        split_size=config.main.SPLIT_SIZE,
                         target=config.main.TARGET_VAR)
 
     # LOADING DATA FILE & TOKENIZER
@@ -51,11 +51,11 @@ def train(run_number, folds=5, project="tweet_disaster", model_name="distilbert"
     # METRIC
     metric_selected = metrics_dict[config.train.METRIC]
     # FOLD LOOP
-    for fold in range(folds):
+    for fold in range(max(folds, 1)):
         print(f"Starting training for fold : {fold}")
         # CREATING TRAINING AND VALIDATION SETS
-        df_train = df[df.kfold != fold].reset_index(drop=True)
-        df_valid = df[df.kfold == fold].reset_index(drop=True)
+        df_train = df[df.split != fold].reset_index(drop=True)
+        df_valid = df[df.split == fold].reset_index(drop=True)
 
         # LOADING MODEL
         for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_name}.model"), inspect.isclass):
@@ -114,7 +114,7 @@ def train(run_number, folds=5, project="tweet_disaster", model_name="distilbert"
         optimizer = torch.optim.Adam(model.parameters(), lr=config.train.LR)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min')
         # SET EARLY STOPPING FUNCTION
-        es = early_stopping.EarlyStopping(patience=2, mode="max")
+        es = EARLY_STOPPING.EarlyStopping(patience=2, mode="max")
         # CREATE TRAINER
         trainer = TRAINER(model=model,
                           optimizer=optimizer,
@@ -151,6 +151,10 @@ def train(run_number, folds=5, project="tweet_disaster", model_name="distilbert"
                 print("Early Stopping")
                 break
             gc.collect()
+            
+        # IF WE GO FOR A TRAIN - VALID SPLIT WE TRAIN ONE MODEL ONLY (folds=0 or 1)
+        if folds < 2:
+            break
 
 ##########
 # PARSER #

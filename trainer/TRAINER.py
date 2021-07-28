@@ -4,7 +4,7 @@
 import numpy as np
 import torch
 from tqdm import tqdm
-from utils.average_meter import AverageMeter
+from utils.AVERAGE_METER import AverageMeter
 import warnings
 warnings.filterwarnings("ignore")
 #################

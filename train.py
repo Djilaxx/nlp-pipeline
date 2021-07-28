@@ -8,6 +8,7 @@ import gc
 import pandas as pd
 from pathlib import Path
 import datetime
+import wandb
 # ML IMPORT
 import torch
 # MY OWN MODULES
@@ -19,10 +20,14 @@ from utils.metrics import metrics_dict
 ##################
 # TRAIN FUNCTION #
 ##################
-def train(folds=5, project="tweet_disaster", model_name="distilbert"):
-    print(f"Training on project : {project} for {folds} folds with {model_name} model")
+def train(run_number, folds=5, project="tweet_disaster", model_name="distilbert"):
+    print(f"Starting run number {run_number}, training on project : {project} for {folds} folds with {model_name} model")
+
     # CONFIG
     config = getattr(importlib.import_module(f"projects.{project}.config"), "config")
+
+    # INIT WANDB
+    wandb.init(config=config, project=project, name=model_name + "_" + str(run_number))
     # CREATING FOLDS
     folding.create_folds(datapath=config.main.TRAIN_FILE,
                         output_path=config.main.FOLD_FILE,
@@ -117,6 +122,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
                           criterion=criterion,
                           task=config.main.TASK)
 
+        wandb.watch(model, criterion=criterion, idx=fold)
         # START TRAINING FOR N EPOCHS
         for epoch in range(config.train.EPOCHS):
             print(f"Starting epoch number : {epoch}")
@@ -129,12 +135,17 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
             scheduler.step(val_loss)
             # METRICS
             print(f"Validation {config.train.METRIC} = {metric_value}")
+
+            wandb.log({
+                f"Validation Loss for fold {fold}": val_loss,
+                f"Validation {metric_selected.__name__} for fold {fold}": metric_value
+            })
             #SAVING CHECKPOINTS
             Path(os.path.join(config.main.PROJECT_PATH, "model_output/")).mkdir(parents=True, exist_ok=True)
             es(
                 metric_value, 
                 model, 
-                model_path=os.path.join(config.main.PROJECT_PATH, "model_output/", f"model_{model_name}_{str(datetime.date.today().isoformat())}_{fold}.bin")
+                model_path=os.path.join(config.main.PROJECT_PATH, "model_output/", f"model_{model_name}_{str(datetime.date.today().isoformat())}_{run_number}_{fold}.bin")
             )
             if es.early_stop:
                 print("Early Stopping")
@@ -145,6 +156,7 @@ def train(folds=5, project="tweet_disaster", model_name="distilbert"):
 # PARSER #
 ##########
 parser = argparse.ArgumentParser()
+parser.add_argument("--run_number", type=int)
 parser.add_argument("--folds", type=int, default=5)
 parser.add_argument("--project", type=str, default="tweet_disaster")
 parser.add_argument("--model_name", type=str, default="DISTILBERT")
@@ -156,6 +168,7 @@ args = parser.parse_args()
 if __name__ == "__main__":
     print("Training start...")
     train(
+        run_number = args.run_number,
         folds=args.folds,
         project=args.project,
         model_name=args.model_name    

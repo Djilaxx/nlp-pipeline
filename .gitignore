@@ -121,4 +121,4 @@ models/DISTILBERT/config/
 models/BERT/config/
 models/ROBERTA/config/
 data/quora/
-projects/quora
+projects/quora/

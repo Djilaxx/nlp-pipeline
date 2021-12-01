@@ -2,7 +2,30 @@ import numpy as np
 import torch
 
 class EarlyStopping:
+    """
+
+    Parameters:
+    -----------
+
+    Returns:
+    --------
+    """
     def __init__(self, patience=7, mode="max", delta=0.001):
+        """
+        init parameters for the early stopping object
+
+        Parameters:
+        -----------
+        patience: int
+            number of epochs without validation score improve before early stop
+        mode: str - "min" or "max"
+            min if we are trying to minimize validation loss - max otherwise
+        delta: float
+            minimum improve to consider in the validation loss
+        Returns:
+        --------
+        EarlyStopping initial object
+        """
         self.patience = patience
         self.counter = 0
         self.mode = mode
@@ -15,7 +38,23 @@ class EarlyStopping:
             self.val_score = -np.Inf
 
     def __call__(self, epoch_score, model, model_path):
+        """
+        early stopping check to call at each epoch
 
+        Parameters:
+        -----------
+        epoch_score: float or int
+            validation loss or metric to check for early stopping
+        model: object
+            the model object that is trained
+        model_path: str
+            path indicating where to save trained models
+        Returns:
+        --------
+        Save model to model_path if performance improved
+        increase early stop counter by one otherwise
+        """
+        
         if self.mode == "min":
             score = -1.0 * epoch_score
         else:

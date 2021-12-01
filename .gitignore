@@ -116,8 +116,9 @@ dmypy.json
 # personal
 model_init/
 model_output/
-data/
+wandb/
 models/DISTILBERT/config/
 models/BERT/config/
 models/ROBERTA/config/
-
+data/quora/
+projects/quora

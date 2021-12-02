@@ -156,7 +156,7 @@ def train(project="tweet_disaster", model_name="DISTILBERT", run_note="test"):
             wandb.log({f"Training loss": train_loss})
             for metric_name, metric_value in train_metrics.items():
                 print(f"Training {metric_name} score for epoch {epoch}: {metric_value.avg}")
-                wandb.log({f"Training {metric_name} score": metric_value.avg})
+                wandb.log({f"Training {metric_name} score for fold {fold}": metric_value.avg})
 
             # VALIDATION PHASE
             print("Evaluating the model...")
@@ -165,7 +165,7 @@ def train(project="tweet_disaster", model_name="DISTILBERT", run_note="test"):
             wandb.log({f"Validation loss": val_loss})
             for metric_name, metric_value in valid_metrics.items():
                 print(f"Validation {metric_name} score for epoch {epoch}: {metric_value.avg}")
-                wandb.log({f"Validation {metric_name} score": metric_value.avg})
+                wandb.log({f"Validation {metric_name} score for fold {fold}": metric_value.avg})
 
             scheduler.step(val_loss)
 

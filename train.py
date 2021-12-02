@@ -79,7 +79,11 @@ def train(project="tweet_disaster", model_name="DISTILBERT", run_note="test"):
         # LOADING MODEL
         for name, cls in inspect.getmembers(importlib.import_module(f"models.{model_name}.model"), inspect.isclass):
             if name == model_name:
-                model = cls(task=config.main.TASK, model_config_path=f"models/{model_name}/config", n_class=config.main.N_CLASS)
+                # DOWNLOADING THE MODEL CONFIG BEFOREHAND IS FASTER BUT WE CAN DOWNLOAD DIRECTLY WHEN WE START TRAINING
+                if os.path.isdir(f"models/{model_name}/config"):
+                    model = cls(task=config.main.TASK, model_config_path=f"models/{model_name}/config", n_class=config.main.N_CLASS)
+                else:
+                    model = cls(task=config.main.TASK, n_class=config.main.N_CLASS)
 
         model.to(config.main.DEVICE)
         ########################

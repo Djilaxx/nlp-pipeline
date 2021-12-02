@@ -3,7 +3,7 @@ import torch.nn as nn
 import transformers
 
 class DISTILBERT(torch.nn.Module):
-    def __init__(self, task, model_config_path, n_class=2):
+    def __init__(self, task, model_config_path="distilbert-base-uncased", n_class=2):
         super(DISTILBERT, self).__init__()
         self.distilbert = transformers.DistilBertModel.from_pretrained(model_config_path)
         self.drop = nn.Dropout(0.3)

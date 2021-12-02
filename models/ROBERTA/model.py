@@ -3,7 +3,7 @@ import torch.nn as nn
 import transformers
 
 class ROBERTA(torch.nn.Module):
-    def __init__(self, task, model_config_path, n_class = 2):
+    def __init__(self, task, model_config_path="roberta-base", n_class=2):
         super(ROBERTA, self).__init__()
         self.roberta = transformers.RobertaModel.from_pretrained(model_config_path)
         self.drop = nn.Dropout(0.3)
